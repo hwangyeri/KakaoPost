@@ -33,8 +33,16 @@
         console.log("onReceivedActivityMessageViaJavascriptInterface " + event);
       }
 
+      // function postMessageToiOS(postData) {
+      //   window.webkit.messageHandlers.callBackHandler.postMessage(postData);
+      // }
+
       function postMessageToiOS(postData) {
-        window.webkit.messageHandlers.callBackHandler.postMessage(postData);
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.callbackHandler) {
+            window.webkit.messageHandlers.callbackHandler.postMessage(postData);
+        } else {
+            console.error("iOS callbackHandler not found");
+        }
       }
 
       var element_layer = document.getElementById("layer");
