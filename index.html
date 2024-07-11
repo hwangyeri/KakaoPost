@@ -9,12 +9,16 @@
   <div id="layer" style="display:block; position:absolute; overflow:hidden; z-index:1; -webkit-overflow-scrolling:touch;"></div>
   <script src="https://spi.maps.daum.net/imap/map_js_init/postcode.v2.js"></script>
   <script>
-    function postMessageToiOS(postData) {
-      window.webkit.messageHandlers.callBackHandler.postMessage(postData);
+    function postMessageToAndroid(fullRoadAddr, jibunAddr) {
+      if (window.Android) {
+        window.Android.processDATA(fullRoadAddr, jibunAddr);
+      }
     }
 
-    function postMessageToAndroid(fullRoadAddr, jibunAddr) {
-      window.Android.processDATA(fullRoadAddr, jibunAddr);
+    function postMessageToiOS(postData) {
+      if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.callBackHandler) {
+        window.webkit.messageHandlers.callBackHandler.postMessage(postData);
+      }
     }
 
     var element_layer = document.getElementById("layer");
