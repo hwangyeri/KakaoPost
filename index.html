@@ -47,13 +47,13 @@
 
           var jibunAddr = data.jibunAddress ? data.jibunAddress : data.autoJibunAddress;
 
-          // // iOS로 전달
-          // var postData = {
-          //   roadAddress: fullRoadAddr,
-          //   jibunAddress: jibunAddr,
-          //   zonecode: data.zonecode,
-          // };
-          // postMessageToiOS(postData);
+          // iOS로 전달
+          var postData = {
+            roadAddress: fullRoadAddr,
+            jibunAddress: jibunAddr,
+            zonecode: data.zonecode,
+          };
+          postMessageToiOS(postData);
 
           // Android로 전달
           postMessageToAndroid(fullRoadAddr, jibunAddr);
