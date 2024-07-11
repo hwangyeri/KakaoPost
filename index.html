@@ -1,85 +1,78 @@
 <!DOCTYPE html>
-
 <html lang="ko">
-  <head>
-    <title>주소 찾기</title>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width,height=device-height,initial-scale=1.0"
-    />
-  </head>
-  <body onload="execDaumPostcode()">
-    <div
-      id="layer"
-      style="display:block; position:absolute; overflow:hidden; z-index:1; -webkit-overflow-scrolling:touch; "
-    ></div>
-    <script src="https://spi.maps.daum.net/imap/map_js_init/postcode.v2.js"></script>
-    <script>
-      window.addEventListener("message", onReceivedPostMessage, false);
+<head>
+  <title>주소 찾기</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0" />
+</head>
+<body onload="execDaumPostcode()">
+  <div id="layer" style="display:block; position:absolute; overflow:hidden; z-index:1; -webkit-overflow-scrolling:touch;"></div>
+  <script src="https://spi.maps.daum.net/imap/map_js_init/postcode.v2.js"></script>
+  <script>
+    function postMessageToiOS(postData) {
+      window.webkit.messageHandlers.callBackHandler.postMessage(postData);
+    }
 
-      function onReceivedPostMessage(event) {
-        //..ex deconstruct event into action & params
-        var action = event.data.action;
-        var params = event.data.params;
-        console.log("onReceivedPostMessage " + event);
-      }
+    function postMessageToAndroid(fullRoadAddr, jibunAddr) {
+      window.Android.processDATA(fullRoadAddr, jibunAddr);
+    }
 
-      function onReceivedActivityMessageViaJavascriptInterface(json) {
-        //..ex deconstruct data into action & params
-        var data = JSON.parse(json);
-        var action = data.action;
-        var params = data.params;
-        console.log("onReceivedActivityMessageViaJavascriptInterface " + event);
-      }
+    var element_layer = document.getElementById("layer");
+    
+    function execDaumPostcode() {
+      new daum.Postcode({
+        oncomplete: function (data) {
+          var fullRoadAddr = data.roadAddress ? data.roadAddress : data.autoRoadAddress;
+          var extraRoadAddr = ''; // 도로명 조합형 주소 변수
 
-      function postMessageToiOS(postData) {
-        window.webkit.messageHandlers.callBackHandler.postMessage(postData);
-      }
+          // 법정동명이 있을 경우 추가한다. (법정리는 제외)
+          // 법정동의 경우 마지막 문자가 "동/로/가"로 끝난다.
+          if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
+            extraRoadAddr += data.bname;
+          }
 
-      var element_layer = document.getElementById("layer");
-      function execDaumPostcode() {
-        new daum.Postcode({
-          oncomplete: function (data) {
-            var jibunAddress = "";
+          // 건물명이 있고, 공동주택일 경우 추가한다.
+          if (data.buildingName !== '' && data.apartment === 'Y') {
+            extraRoadAddr += (extraRoadAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+          }
 
-            if (data.jibunAddress == "") {
-              jibunAddress = data.autoJibunAddress;
-            } else if (data.autoJibunAddress == "") {
-              jibunAddress = data.jibunAddress;
-            }
+          // 도로명, 지번 조합형 주소가 있을 경우, 괄호까지 추가한 최종 문자열을 만든다.
+          if (extraRoadAddr !== '') {
+            fullRoadAddr += ' (' + extraRoadAddr + ')';
+          }
 
-            var postData = {
-              roadAddress: data.roadAddress,
-              jibunAddress: jibunAddress,
-              zonecode: data.zonecode,
-            };
-            window.postMessageToiOS(postData);
-          },
-          width: "100%",
-          height: "100%",
-        }).embed(element_layer);
-        element_layer.style.display = "block";
-        initLayerPosition();
-      }
+          var jibunAddr = data.jibunAddress ? data.jibunAddress : data.autoJibunAddress;
 
-      function initLayerPosition() {
-        var width = window.innerWidth || document.documentElement.clientWidth;
-        var height =
-          window.innerHeight || document.documentElement.clientHeight;
-        element_layer.style.width = width + "px";
-        element_layer.style.height = height + "px";
-        element_layer.style.left =
-          ((window.innerWidth || document.documentElement.clientWidth) -
-            width) /
-            2 +
-          "px";
-        element_layer.style.top =
-          ((window.innerHeight || document.documentElement.clientHeight) -
-            height) /
-            2 +
-          "px";
-      }
-    </script>
-  </body>
+          // iOS로 전달
+          var postData = {
+            roadAddress: fullRoadAddr,
+            jibunAddress: jibunAddr,
+            zonecode: data.zonecode,
+          };
+          postMessageToiOS(postData);
+
+          // Android로 전달
+          postMessageToAndroid(fullRoadAddr, jibunAddr);
+        },
+        width: '100%',
+        height: '100%',
+      }).embed(element_layer);
+
+      // iframe을 넣은 element를 보이게 한다.
+      element_layer.style.display = 'block';
+
+      // iframe을 넣은 element의 위치를 화면의 가운데로 이동시킨다.
+      initLayerPosition();
+    }
+
+    function initLayerPosition() {
+      var width = window.innerWidth || document.documentElement.clientWidth;
+      var height = window.innerHeight || document.documentElement.clientHeight;
+      element_layer.style.width = width + "px";
+      element_layer.style.height = height + "px";
+      element_layer.style.left = ((window.innerWidth || document.documentElement.clientWidth) - width) / 2 + "px";
+      element_layer.style.top = ((window.innerHeight || document.documentElement.clientHeight) - height) / 2 + "px";
+    }
+  </script>
+</body>
 </html>
